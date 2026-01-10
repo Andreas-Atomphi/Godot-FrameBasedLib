@@ -314,7 +314,7 @@ func _on_floor_is_snapped(was_on_floor: bool, vel_dir_facing_up) -> bool:
       var length := maxf(floor_snap_length, safe_margin)
       
       var coll := move_and_collide(-up_direction * length, false, safe_margin, true)
-      if coll == null:
+      if coll != null:
             if coll.get_angle(up_direction) <= floor_max_angle + _FLOOR_ANGLE_THRESHOLD:
                   return true
       return false
