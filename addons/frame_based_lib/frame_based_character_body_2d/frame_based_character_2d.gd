@@ -1,5 +1,6 @@
-@icon("res://addons/FrameBasedCharacter2D/icon.svg")
+@icon("res://addons/frame_based_lib/frame_based_character_2D/icon.svg")
 extends CharacterBody2D
+
 class_name FrameBasedCharacterBody2D
 
 const _FLOOR_ANGLE_THRESHOLD := 0.01
@@ -48,32 +49,31 @@ func f_move_and_slide() -> bool:
                         _platform_rid = RID()
       _motion_results.clear()
       _last_motion = Vector2.ZERO
-      
+
       var was_on_floor := _on_floor
       _on_floor = false
       _on_wall = false
       _on_ceiling = false
-      
+
       if not current_platform_velocity.is_zero_approx():
             PhysicsServer2D.body_add_collision_exception(get_rid(), _platform_rid)
-            
+
             var floor_result := move_and_collide(current_platform_velocity, false, safe_margin, true)
             if floor_result != null:
                   _motion_results.push_back(floor_result)
                   _set_collision_direction(floor_result)
-            
-      
+
       if motion_mode == MOTION_MODE_GROUNDED:
             _move_and_slide_grounded(was_on_floor)
       else:
             _move_and_slide_floating()
-      
+
       if platform_on_leave != PLATFORM_ON_LEAVE_DO_NOTHING:
             if _on_floor == false and _on_wall == false:
                   if platform_on_leave == PLATFORM_ON_LEAVE_ADD_UPWARD_VELOCITY and current_platform_velocity.dot(up_direction) < 0:
                         current_platform_velocity = current_platform_velocity.slide(up_direction)
                   velocity += current_platform_velocity
-      
+
       return _motion_results.size() > 0
 
 
@@ -116,7 +116,7 @@ func _set_collision_direction(result: KinematicCollision2D) -> void:
             _on_wall = true
             _wall_normal = result.get_normal()
             if result.get_collider() == null:
-                  _set_platform_data(result)      
+                  _set_platform_data(result)
 
 
 func _set_platform_data(result: KinematicCollision2D) -> void:
@@ -133,24 +133,24 @@ func _move_and_slide_grounded(was_on_floor: bool) -> void:
       var motion := velocity
       var motion_slide_up := motion.slide(up_direction)
       var prev_floor_normal := _floor_normal
-      
+
       _platform_rid = RID()
       _platform_object_id = Object.new().get_instance_id()
       _floor_normal = Vector2.ZERO
       _platform_velocity = Vector2.ZERO
-      
+
       const CMP_EPSILON = 0.00001
-      
+
       var sliding_enabled := not floor_stop_on_slope
       var can_apply_constant_speed := sliding_enabled
       var apply_ceiling_velocity := false
       var vel_dir_facing_up := velocity.dot(up_direction) > 0
       var last_travel := Vector2.ZERO
       var first_slide := true
-      
+
       for slide in max_slides:
             var collision := move_and_collide(motion, false, safe_margin, not sliding_enabled)
-            
+
             _last_motion = motion
             if collision != null:
                   _last_motion = collision.get_travel()
@@ -172,11 +172,11 @@ func _move_and_slide_grounded(was_on_floor: bool) -> void:
                         _last_motion = Vector2.ZERO
                         motion = Vector2.ZERO
                         break
-                  
+
                   if collision.get_remainder().is_zero_approx():
                         motion = Vector2.ZERO
                         break
-                  
+
                   if floor_block_on_wall and _on_wall and motion_slide_up.dot(collision.get_normal()) <= 0:
                         if was_on_floor and not not _on_floor and not vel_dir_facing_up:
                               if collision.get_travel().length() <= safe_margin + CMP_EPSILON:
@@ -220,29 +220,29 @@ func _move_and_slide_grounded(was_on_floor: bool) -> void:
                   var gt := get_global_transform()
                   gt.origin = _previous_position
                   global_transform = gt
-                  
+
                   var motion_slide_norm := motion.slide(prev_floor_normal).normalized()
                   motion = motion_slide_norm * motion_slide_norm.length()
                   collision = null
-            
+
             can_apply_constant_speed = not can_apply_constant_speed and not sliding_enabled
             sliding_enabled = true
             first_slide = false
-            
+
             if collision == null or motion.is_zero_approx():
                   break
-            
+
       _snap_on_floor(was_on_floor, vel_dir_facing_up, false)
-      
+
       if f_is_on_wall_only() and motion_slide_up.dot(_motion_results.get(0).get_normal()) < 0:
             var slide_motion := velocity.slide(_motion_results.get(0).get_normal())
             if motion_slide_up.dot(slide_motion) < 0:
                   velocity = up_direction * up_direction.dot(velocity)
             else:
-                  velocity = up_direction * up_direction.dot(velocity) + slide_motion.slide(up_direction)            
+                  velocity = up_direction * up_direction.dot(velocity) + slide_motion.slide(up_direction)
       if _on_floor and not vel_dir_facing_up:
             velocity = velocity.slide(up_direction)
-                        
+
 
 func _move_and_slide_floating() -> void:
       var motion := velocity
@@ -250,7 +250,7 @@ func _move_and_slide_floating() -> void:
       _platform_object_id = Object.new().get_instance_id()
       _floor_normal = Vector2.ZERO
       _platform_velocity = Vector2.ZERO
-      
+
       var first_slide := false
       for slide in max_slides:
             var collision := move_and_collide(motion, false, safe_margin, true)
@@ -262,7 +262,7 @@ func _move_and_slide_floating() -> void:
                   if collision.get_remainder().is_zero_approx():
                         motion = Vector2.ZERO
                         break
-                  
+
                   if wall_min_slide_angle != 0 and collision.get_angle(-velocity.normalized()) < wall_min_slide_angle + _FLOOR_ANGLE_THRESHOLD:
                         motion = Vector2.ZERO
                   elif first_slide == true:
@@ -270,12 +270,12 @@ func _move_and_slide_floating() -> void:
                         motion = motion_slide_norm * (motion.length() - collision.get_travel().length())
                   else:
                         motion = collision.get_remainder().slide(collision.get_normal())
-                  
+
                   if motion.dot(velocity) <= 0.0:
                         motion = Vector2.ZERO
             elif motion.is_zero_approx():
                   break
-      
+
             first_slide = false
 
 
@@ -291,28 +291,28 @@ func _apply_floor_snap(wall_as_floor: bool = false) -> void:
       var length := maxf(floor_snap_length, safe_margin)
       var previous_gt := get_global_transform()
       var collision := move_and_collide(-up_direction * length, false, safe_margin, true)
-      
+
       if collision == null:
             return
-      if collision.get_angle(up_direction) <= floor_max_angle + _FLOOR_ANGLE_THRESHOLD or\
+      if collision.get_angle(up_direction) <= floor_max_angle + _FLOOR_ANGLE_THRESHOLD or \
       wall_as_floor and collision.get_angle(-up_direction) > floor_max_angle + _FLOOR_ANGLE_THRESHOLD:
             _on_floor = true
             _floor_normal = collision.get_normal()
             _set_platform_data(collision)
-            
+
             if collision.get_travel().length() > safe_margin:
                   collision.set("travel", up_direction * up_direction.dot(collision.get_travel()))
             else:
                   collision.set("travel", Vector2.ZERO)
       previous_gt.origin += collision.get_travel()
       global_transform = previous_gt
-                  
+
 
 func _on_floor_is_snapped(was_on_floor: bool, vel_dir_facing_up) -> bool:
       if up_direction == Vector2.ZERO or _on_floor or not was_on_floor or vel_dir_facing_up:
             return false
       var length := maxf(floor_snap_length, safe_margin)
-      
+
       var coll := move_and_collide(-up_direction * length, false, safe_margin, true)
       if coll != null:
             if coll.get_angle(up_direction) <= floor_max_angle + _FLOOR_ANGLE_THRESHOLD:
